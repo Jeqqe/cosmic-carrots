@@ -39,9 +39,9 @@ jobs:
             echo "runner=yarn" >> $GITHUB_OUTPUT
             exit 0
           elif [ -f "${{ github.workspace }}/frontend/package.json" ]; then
-            echo "manager=${{ github.workspace }}/frontend npm" >> $GITHUB_OUTPUT
+            echo "manager=${{ github.workspace }}/frontend/npm" >> $GITHUB_OUTPUT
             echo "command=ci" >> $GITHUB_OUTPUT
-            echo "runner=${{ github.workspace }}/frontend npx --no-install" >> $GITHUB_OUTPUT
+            echo "runner=${{ github.workspace }}/frontend/npx --no-install" >> $GITHUB_OUTPUT
             exit 0
           else
             echo "Unable to determine packager manager"
