@@ -1,205 +1,145 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Head from 'next/head';
 
 import PlanetSelection from '../components/PlanetSelection';
 import Header from '../components/Header';
 import CurrentPlanet from '../components/CurrentPlanet';
-import { Planet } from '../../types/Planet';
-
-const PLANETS = [
-  {
-    name: 'Zolthar',
-    color: 'text-red-300',
-    fill: 'fill-red-400',
-    stroke: 'stroke-red-400',
-    size: 'w-16 h-16',
-    paddingTop: 'pt-4',
-    activated: true,
-  },
-  {
-    name: 'Xantheum',
-    color: 'text-blue-300',
-    fill: 'fill-blue-400',
-    stroke: 'stroke-blue-400',
-    size: 'w-24 h-24',
-    paddingTop: 'pt-8',
-    activated: false,
-  },
-  {
-    name: 'Nivara',
-    color: 'text-green-300',
-    fill: 'fill-green-400',
-    stroke: 'stroke-green-400',
-    size: 'w-16 h-16',
-    paddingTop: 'pt-10',
-    activated: false,
-  },
-  {
-    name: 'Lunaris',
-    color: 'text-yellow-300',
-    fill: 'fill-yellow-400',
-    stroke: 'stroke-yellow-400',
-    size: 'w-24 h-24',
-    paddingTop: 'pt-11',
-    activated: false,
-  },
-  {
-    name: 'Valtorix',
-    color: 'text-purple-300',
-    fill: 'fill-purple-400',
-    stroke: 'stroke-purple-400',
-    size: 'w-20 h-20',
-    paddingTop: 'pt-10',
-    activated: false,
-  },
-  {
-    name: 'Arcanum',
-    color: 'text-orange-300',
-    fill: 'fill-orange-400',
-    stroke: 'stroke-orange-400',
-    size: 'w-32 h-32',
-    paddingTop: 'pt-8',
-    activated: false,
-  },
-  {
-    name: 'Galaxion',
-    color: 'text-pink-300',
-    fill: 'fill-pink-400',
-    stroke: 'stroke-pink-400',
-    size: 'w-28 h-28',
-    paddingTop: 'pt-4',
-    activated: false,
-  },
-];
+import {
+  Storage,
+  setAppStorageItem,
+  getAppStorage,
+  initPlanetStorage,
+  setPlanetItems,
+} from '../storage';
+import { AppStorage, PlanetStorage } from '../../types/Storage';
 
 export default function Play() {
-  const [carrots, setCarrots] = React.useState(-1);
-  const [gold, setGold] = React.useState(-1);
-  const [soils, setSoils] = React.useState(-1);
-  const [storage, setStorage] = React.useState(-1);
+  const [idleCloseTime, setIdleCloseTime] = React.useState(0);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedPlanet, setSelectedPlanet] = React.useState<Planet>(PLANETS[0]!);
+  const [appStorage, setAppStorage] = React.useState<AppStorage>({} as AppStorage);
+  const [selectedPlanet, setSelectedPlanet] = React.useState<PlanetStorage>({} as PlanetStorage);
 
+  // onBlur and onFocus event listener
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIdleCloseTime(new Date().getTime());
+      } else {
+        const timeDiff = new Date().getTime() - idleCloseTime;
+        const timeInSec = timeDiff / 1000;
+
+        const newCarrots = selectedPlanet.carrots + (selectedPlanet.soils * 0.1 * timeInSec);
+
+        if (newCarrots >= selectedPlanet.storage) {
+          setPlanetItems(selectedPlanet.id, {
+            carrots: selectedPlanet.storage,
+            lastVisit: new Date(),
+          });
+          setSelectedPlanet({
+            ...selectedPlanet,
+            carrots: selectedPlanet.storage,
+            lastVisit: new Date(),
+          });
+        } else {
+          setPlanetItems(selectedPlanet.id, {
+            carrots: newCarrots,
+            lastVisit: new Date(),
+          });
+          setSelectedPlanet({
+            ...selectedPlanet,
+            carrots: newCarrots,
+            lastVisit: new Date(),
+          });
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [selectedPlanet]);
+
+  React.useEffect(() => {
+    const initAppStorage = getAppStorage();
+    setAppStorage(initAppStorage);
+
+    const { selectedPlanetId, planet } = initAppStorage;
+    const initPlanet = planet.find(
+      (planetItem) => planetItem.id === selectedPlanetId,
+    );
+    if (initPlanet) {
+      setSelectedPlanet(initPlanet);
+    } else {
+      setSelectedPlanet(initPlanetStorage(selectedPlanetId));
+    }
+  }, []);
+
+  // Carrot production loop
   useEffect(() => {
-    if (carrots === -1) {
-      const savedCarrots = localStorage.getItem('carrots');
-      if (savedCarrots) {
-        setCarrots(parseInt(savedCarrots, 10));
-      } else {
-        setCarrots(0);
-      }
-    }
-
-    if (gold === -1) {
-      const savedGold = localStorage.getItem('gold');
-      if (savedGold) {
-        setGold(parseInt(savedGold, 10));
-      } else {
-        setGold(0);
-      }
-    }
-
-    if (soils === -1) {
-      const savedSoils = localStorage.getItem('soils');
-      if (savedSoils) {
-        setSoils(parseInt(savedSoils, 10));
-      } else {
-        setSoils(0);
-      }
-    }
-
-    if (storage === -1) {
-      const savedStorage = localStorage.getItem('storage');
-      if (savedStorage) {
-        setStorage(parseInt(savedStorage, 10));
-      } else {
-        setStorage(1000);
-      }
-    }
-  }, [carrots, gold, soils, storage]);
-
-  useEffect(() => {
-    if (carrots !== -1) {
-      localStorage.setItem('carrots', carrots.toString());
-    }
-
-    if (gold !== -1) {
-      localStorage.setItem('gold', gold.toString());
-    }
-
-    if (soils !== -1) {
-      localStorage.setItem('soils', soils.toString());
-    }
-
-    if (storage !== -1) {
-      localStorage.setItem('storage', storage.toString());
-    }
-  }, [carrots, gold, soils, storage]);
-
-  useEffect(() => {
-    if (carrots === -1) return undefined;
-
     const interval = setInterval(() => {
-      if (carrots >= storage) {
-        setCarrots(storage);
-        clearInterval(interval);
+      if (selectedPlanet.carrots >= selectedPlanet.storage) {
+        setPlanetItems(selectedPlanet.id, {
+          carrots: selectedPlanet.storage,
+          lastVisit: new Date(),
+        });
+        setSelectedPlanet({
+          ...selectedPlanet,
+          carrots: selectedPlanet.storage,
+          lastVisit: new Date(),
+        });
         return;
       }
-      setCarrots(carrots + (soils * 0.1));
+
+      // Check for last visit and calculate generated carrots
+      const lastVisit = new Date(selectedPlanet.lastVisit);
+      const timeDiff = new Date().getTime() - lastVisit.getTime();
+      const timeInSec = timeDiff / 1000;
+
+      const multiplier = timeInSec < 60 ? 1 : timeInSec;
+
+      const newCarrots = selectedPlanet.carrots + (selectedPlanet.soils * 0.1 * multiplier);
+      const storageCarrots = newCarrots > selectedPlanet.storage
+        ? selectedPlanet.storage
+        : newCarrots;
+
+      setPlanetItems(selectedPlanet.id, {
+        carrots: storageCarrots,
+        lastVisit: new Date(),
+      });
+      setSelectedPlanet({ ...selectedPlanet, carrots: storageCarrots, lastVisit: new Date() });
     }, 100);
     return () => clearInterval(interval);
-  }, [carrots, soils, storage]);
+  }, [selectedPlanet]);
 
-  const handleHarvest = () => {
-    setCarrots(carrots + 1);
+  const updatePlanetItem = (items: {
+    [key in keyof PlanetStorage]?: PlanetStorage[key];
+  }) => {
+    setPlanetItems(selectedPlanet.id, items);
+    setSelectedPlanet({ ...selectedPlanet, ...items });
   };
 
-  const handleSell = (amount: number) => {
-    if (carrots >= amount) {
-      setCarrots(carrots - amount);
-      setGold(gold + amount);
-    }
+  const updateStorageItem = (item: keyof AppStorage, value: any) => {
+    setAppStorageItem(item, value);
+    setAppStorage({ ...appStorage, [item]: value });
   };
 
-  const handleFertilize = () => {
-    if (gold >= 100) {
-      setGold(gold - 100);
-      setSoils(soils + 1);
-    }
-  };
-
-  const handleBuyStorage = () => {
-    if (gold >= 1000) {
-      setGold(gold - 1000);
-      setStorage(storage + 1000);
-    }
-  };
+  const value = useMemo(() => ({
+    updateStorageItem, updatePlanetItem, selectedPlanet, gold: appStorage.gold,
+  }), [updateStorageItem, updatePlanetItem, selectedPlanet, appStorage.gold]);
 
   return (
-    <>
+    <Storage.Provider value={value}>
       <Head>
         <title>Cosmic Carrots - Play</title>
         <meta name='description' content='Gameplay of cosmic carrots' />
       </Head>
       <main className='flex min-h-screen flex-col bg-gradient-to-b from-[#2e026d] to-[#15162c]'>
-        <Header
-          carrots={carrots}
-          gold={gold}
-        />
-        <CurrentPlanet
-          carrots={carrots}
-          gold={gold}
-          soils={soils}
-          storage={storage}
-          selectedPlanet={selectedPlanet}
-          handleHarvest={handleHarvest}
-          handleSell={handleSell}
-          handleFertilize={handleFertilize}
-          handleBuyStorage={handleBuyStorage}
-        />
-        <PlanetSelection planets={PLANETS} />
+        <Header />
+        <PlanetSelection />
+        <CurrentPlanet />
       </main>
-    </>
+    </Storage.Provider>
   );
 }
