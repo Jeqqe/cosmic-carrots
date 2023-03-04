@@ -1,10 +1,22 @@
-import { PlanetSettings, PlanetStyle, Planet } from '../types/Planet';
+import { PlanetSettings, PlanetStyle } from '../../types/Planet';
 
 export const PLANET_SETTINGS: PlanetSettings[] = [
   {
     id: 1,
     name: 'Zolthar',
     description: 'Zolthar is the first planet of the Solar System of this universe.',
+    carrotPrice: 1,
+    fertilizerPrice: 10,
+    fertilizerPriceIncreaseRate: 1.5,
+    storageSize: 1000,
+    storagePrice: 1000,
+    storagePriceIncreaseRate: 1.2,
+    nextPlanetResearchCost: 100000,
+  },
+  {
+    id: 2,
+    name: 'Xantheum',
+    description: 'Xantheum is the second planet of the Solar System of this universe.',
     carrotPrice: 1,
     fertilizerPrice: 10,
     fertilizerPriceIncreaseRate: 1.5,
@@ -80,20 +92,3 @@ export const PLANET_STYLE: PlanetStyle[] = [
     paddingTop: 'pt-12',
   },
 ];
-
-/**
- * Get planet settings and style by planet id
- *
- * @param planetId the desired planet id
- * @returns planet settings and style
- */
-export const getPlanet = (planetId: number): Planet | null => {
-  const planetSettings = PLANET_SETTINGS.find((planet) => planet.id === planetId);
-  const planetStyle = PLANET_STYLE.find((planet) => planet.id === planetId);
-
-  if (!planetSettings || !planetStyle) {
-    return null;
-  }
-
-  return { ...planetSettings, ...planetStyle };
-};

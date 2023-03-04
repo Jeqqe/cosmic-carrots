@@ -2,7 +2,6 @@ import React from 'react';
 
 import Head from 'next/head';
 import Link from 'next/link';
-import InformationModal from '../components/InformationModal';
 
 import text from './text.json';
 
@@ -34,8 +33,6 @@ export default function Home() {
               >
                 <Link href='/play'>Start Game</Link>
               </button>
-
-              <InformationModal />
             </div>
           </div>
         </div>

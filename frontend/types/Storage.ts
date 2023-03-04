@@ -1,13 +1,12 @@
-export interface PlanetStorage {
-  id: number
+import { PlanetSettings } from './Planet';
+
+export type PlanetStorage = Pick<
+PlanetSettings, 'id' | 'carrotPrice' | 'fertilizerPrice' | 'storageSize' | 'storagePrice'
+> & {
   carrots: number
   soils: number
-  fertilizerPrice: number
-  pestControl: number
-  storage: number
-  storagePrice: number
   lastVisit: Date
-}
+};
 
 export interface AppStorage {
   selectedPlanetId: number

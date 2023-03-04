@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
 import { createContext } from 'react';
 import { AppStorage, PlanetStorage } from '../types/Storage';
@@ -29,6 +30,14 @@ export const getAppStorageItem = (item: keyof AppStorage) => {
 export const setAppStorageItem = (item: keyof AppStorage, value: any) => {
   const appStorage = getAppStorage();
   appStorage[item] = value;
+  setAppStorage(appStorage);
+};
+
+export const setAppStorageItems = (items: { [key in keyof AppStorage]?: any }) => {
+  const appStorage = getAppStorage();
+  Object.keys(items).forEach((key) => {
+    appStorage[key as keyof AppStorage] = items[key as keyof AppStorage];
+  });
   setAppStorage(appStorage);
 };
 
@@ -112,8 +121,14 @@ export const Storage = createContext({
   }) => {
     if (items) console.log('update function not defined.');
   },
-  updateStorageItem: (item: keyof AppStorage, value: any) => {
-    if (item && value) console.log('update function not defined.');
+  updateStorageItem: (items: { [key in keyof AppStorage]?: AppStorage[key] }) => {
+    if (items) console.log('update function not defined.');
+  },
+  unlockNextPlanet: () => {
+    console.log('unlock function not defined.');
+  },
+  setCurrentPlanet: (planetId: number) => {
+    console.log('set current planet function not defined.');
   },
   selectedPlanet: {} as PlanetStorage,
   gold: 0,

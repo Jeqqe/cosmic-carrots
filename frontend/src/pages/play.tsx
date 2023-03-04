@@ -1,145 +1,67 @@
-import React, { useEffect, useMemo } from 'react';
-import Head from 'next/head';
+'use client';
 
-import PlanetSelection from '../components/PlanetSelection';
-import Header from '../components/Header';
-import CurrentPlanet from '../components/CurrentPlanet';
-import {
-  Storage,
-  setAppStorageItem,
-  getAppStorage,
-  initPlanetStorage,
-  setPlanetItems,
-} from '../storage';
-import { AppStorage, PlanetStorage } from '../../types/Storage';
+import Head from 'next/head';
+import React, { useEffect } from 'react';
+
+import Level1 from '../components/Level1';
+import PlanetInfo from '../components/PlanetInfo';
+import Sidebar from '../components/Sidebar';
 
 export default function Play() {
-  const [idleCloseTime, setIdleCloseTime] = React.useState(0);
+  const [load, setLoad] = React.useState(0);
+  const [carrots, setCarrots] = React.useState(1);
+  const [level, setLevel] = React.useState(1);
+  const [transition, setTransition] = React.useState(false);
 
-  const [appStorage, setAppStorage] = React.useState<AppStorage>({} as AppStorage);
-  const [selectedPlanet, setSelectedPlanet] = React.useState<PlanetStorage>({} as PlanetStorage);
-
-  // onBlur and onFocus event listener
-  React.useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setIdleCloseTime(new Date().getTime());
-      } else {
-        const timeDiff = new Date().getTime() - idleCloseTime;
-        const timeInSec = timeDiff / 1000;
-
-        const newCarrots = selectedPlanet.carrots + (selectedPlanet.soils * 0.1 * timeInSec);
-
-        if (newCarrots >= selectedPlanet.storage) {
-          setPlanetItems(selectedPlanet.id, {
-            carrots: selectedPlanet.storage,
-            lastVisit: new Date(),
-          });
-          setSelectedPlanet({
-            ...selectedPlanet,
-            carrots: selectedPlanet.storage,
-            lastVisit: new Date(),
-          });
-        } else {
-          setPlanetItems(selectedPlanet.id, {
-            carrots: newCarrots,
-            lastVisit: new Date(),
-          });
-          setSelectedPlanet({
-            ...selectedPlanet,
-            carrots: newCarrots,
-            lastVisit: new Date(),
-          });
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [selectedPlanet]);
-
-  React.useEffect(() => {
-    const initAppStorage = getAppStorage();
-    setAppStorage(initAppStorage);
-
-    const { selectedPlanetId, planet } = initAppStorage;
-    const initPlanet = planet.find(
-      (planetItem) => planetItem.id === selectedPlanetId,
-    );
-    if (initPlanet) {
-      setSelectedPlanet(initPlanet);
-    } else {
-      setSelectedPlanet(initPlanetStorage(selectedPlanetId));
-    }
-  }, []);
-
-  // Carrot production loop
   useEffect(() => {
     const interval = setInterval(() => {
-      if (selectedPlanet.carrots >= selectedPlanet.storage) {
-        setPlanetItems(selectedPlanet.id, {
-          carrots: selectedPlanet.storage,
-          lastVisit: new Date(),
-        });
-        setSelectedPlanet({
-          ...selectedPlanet,
-          carrots: selectedPlanet.storage,
-          lastVisit: new Date(),
-        });
-        return;
-      }
-
-      // Check for last visit and calculate generated carrots
-      const lastVisit = new Date(selectedPlanet.lastVisit);
-      const timeDiff = new Date().getTime() - lastVisit.getTime();
-      const timeInSec = timeDiff / 1000;
-
-      const multiplier = timeInSec < 60 ? 1 : timeInSec;
-
-      const newCarrots = selectedPlanet.carrots + (selectedPlanet.soils * 0.1 * multiplier);
-      const storageCarrots = newCarrots > selectedPlanet.storage
-        ? selectedPlanet.storage
-        : newCarrots;
-
-      setPlanetItems(selectedPlanet.id, {
-        carrots: storageCarrots,
-        lastVisit: new Date(),
-      });
-      setSelectedPlanet({ ...selectedPlanet, carrots: storageCarrots, lastVisit: new Date() });
-    }, 100);
+      setLoad((prev) => prev + 1);
+    }, 10);
     return () => clearInterval(interval);
-  }, [selectedPlanet]);
+  }, []);
 
-  const updatePlanetItem = (items: {
-    [key in keyof PlanetStorage]?: PlanetStorage[key];
-  }) => {
-    setPlanetItems(selectedPlanet.id, items);
-    setSelectedPlanet({ ...selectedPlanet, ...items });
-  };
+  useEffect(() => {
+    if (load >= 1000) {
+      setCarrots((prev) => prev + 1);
+      setLoad(0);
 
-  const updateStorageItem = (item: keyof AppStorage, value: any) => {
-    setAppStorageItem(item, value);
-    setAppStorage({ ...appStorage, [item]: value });
-  };
-
-  const value = useMemo(() => ({
-    updateStorageItem, updatePlanetItem, selectedPlanet, gold: appStorage.gold,
-  }), [updateStorageItem, updatePlanetItem, selectedPlanet, appStorage.gold]);
+      setTransition(true);
+      setTimeout(() => {
+        setLevel((prev) => prev + 1);
+        setTransition(false);
+      }, 1000);
+    }
+  }, [load]);
 
   return (
-    <Storage.Provider value={value}>
+    <div>
+      <div
+        className='fixed h-screen w-screen top-0 left-0 bg-cover bg-bottom bg-no-repeat'
+        style={{
+          backgroundImage: 'url("/media/background.png")',
+        }}
+      />
       <Head>
-        <title>Cosmic Carrots - Play</title>
-        <meta name='description' content='Gameplay of cosmic carrots' />
+        <title>Play</title>
+        <meta name='description' content='Play' />
       </Head>
-      <main className='flex min-h-screen flex-col bg-gradient-to-b from-[#2e026d] to-[#15162c]'>
-        <Header />
-        <PlanetSelection />
-        <CurrentPlanet />
-      </main>
-    </Storage.Provider>
+      <div className='w-full h-full min-h-screen bg-slate-900/[97%] backdrop-blur-sm'>
+        {
+          level === 1 && (
+            <div className={`flex flex-col justify-center items-center ${transition && 'animate-fade'} w-full h-full min-h-screen `}>
+              <Level1 load={load} carrots={carrots} />
+            </div>
+          )
+        }
+        {
+          level > 1 && (
+            <div className='flex flex-row gap-4'>
+              <Sidebar />
+              <PlanetInfo load={load} carrots={carrots} />
+            </div>
+          )
+        }
+      </div>
+    </div>
   );
 }
